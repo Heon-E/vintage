@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>빈티지샵</title>
+<style>
+:root{
+  --bg:#faf8f3; --surface:#ffffff; --surface2:#f4f1ea; --text:#2b2723; --muted:#8c8377;
+  --border:#e6e0d4; --accent:#c2902f; --accent-soft:#f3e7cb; --good:#5b8c5a; --bad:#c2553f; --star:#e0a93b;
+  --shadow:0 1px 3px rgba(40,34,24,.06),0 4px 16px rgba(40,34,24,.05); --radius:16px;
+}
+[data-theme="dark"]{
+  --bg:#14161b; --surface:#1c1f26; --surface2:#232730; --text:#e9e4da; --muted:#9a9387;
+  --border:#2c313b; --accent:#d8a83f; --accent-soft:#3a3320; --good:#7bb06f; --bad:#d9745c; --star:#e6b94f;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.5;padding:max(env(safe-area-inset-top),14px) 14px 80px;
+  max-width:880px;margin:0 auto;-webkit-font-smoothing:antialiased}
+h1,h2{font-family:Georgia,"Apple SD Gothic Neo",serif;font-weight:600}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+header h1{font-size:1.35rem}
+.iconbtn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 10px;
+  cursor:pointer;color:var(--text);font-size:1rem;line-height:1}
+.iconbtn:hover{border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+
+/* toolbar + filters */
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.toolbar input[type=search]{flex:1;min-width:150px;font:inherit;padding:9px 12px;border:1px solid var(--border);
+  border-radius:10px;background:var(--surface);color:var(--text)}
+.toolbar select{font:inherit;padding:9px 10px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface);color:var(--text)}
+.tabs{display:flex;gap:6px;background:var(--surface2);padding:5px;border-radius:12px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{border:none;background:transparent;color:var(--muted);font-size:.88rem;
+  font-weight:600;padding:7px 12px;border-radius:9px;cursor:pointer;transition:.15s;white-space:nowrap}
+.tabs button.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+
+.count{font-size:.82rem;color:var(--muted);margin:0 2px 10px}
+.hint{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.hint .k{font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:1px 6px}
+
+/* grid + cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;transition:border-color .2s,transform .08s}
+.card:hover{border-color:var(--accent)}
+.card.pinned{border-color:var(--accent-soft);box-shadow:0 0 0 2px var(--accent-soft),var(--shadow)}
+.open{display:flex;gap:11px;align-items:center;cursor:pointer;min-width:0}
+.open:active{transform:scale(.99)}
+.tile{width:46px;height:46px;flex:none;border-radius:12px;display:grid;place-items:center;color:#fff;
+  font-weight:700;font-size:1.2rem;letter-spacing:-.02em;user-select:none;
+  box-shadow:inset 0 -12px 20px rgba(0,0,0,.12)}
+.info{min-width:0;flex:1}
+.name{font-size:1.02rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.host{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.memo{font-size:.82rem;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.foot{display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);padding-top:9px;margin-top:auto}
+.pin{cursor:pointer;font-size:1.05rem;color:var(--border);line-height:1;flex:none}
+.pin.on{color:var(--star)}
+.cat{font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);
+  color:var(--accent);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.stat{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.spacer{flex:1}
+.mini{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:2px 3px;line-height:1}
+.mini:hover{color:var(--accent)} .mini.del:hover{color:var(--bad)}
+
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:48px 20px;border:1.5px dashed var(--border);
+  border-radius:var(--radius);background:var(--surface)}
+.empty b{color:var(--text)} .empty .big{font-size:2.2rem;display:block;margin-bottom:10px}
+
+.fab{position:fixed;right:18px;bottom:22px;background:var(--accent);color:#fff;border:none;width:54px;height:54px;
+  border-radius:50%;font-size:1.7rem;cursor:pointer;box-shadow:0 6px 20px rgba(40,34,24,.3);z-index:500}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;
+  z-index:1000;padding:16px}
+.modal.show{display:flex}
+.modal-box{background:var(--surface);border-radius:var(--radius);padding:20px;max-width:420px;width:100%;
+  box-shadow:var(--shadow);max-height:90vh;overflow:auto}
+.modal-box h2{font-size:1.1rem;margin-bottom:14px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:3px;font-weight:600}
+.field input,.field textarea{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--border);
+  border-radius:9px;background:var(--bg);color:var(--text)}
+.field textarea{resize:vertical;min-height:44px}
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:9px;cursor:pointer;
+  font-weight:600;font:inherit}
+.btn.ghost{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.modal-actions .left{margin-right:auto}
+.datarow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.warn{display:none;background:var(--accent-soft);color:var(--accent);padding:9px 12px;border-radius:10px;
+  font-size:.82rem;margin-bottom:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧥 빈티지샵</h1>
+  <div style="display:flex;gap:6px">
+    <button class="iconbtn" id="openPins" title="핀 고정 샵 모두 열기">📌</button>
+    <button class="iconbtn" id="dataBtn" title="백업">💾</button>
+    <button class="iconbtn" id="themeBtn" title="테마">🌙</button>
+  </div>
+</header>
+<div id="storageWarn" class="warn">⚠️ 이 환경에선 저장이 안 될 수 있어요. 일반 브라우저 탭에서 열어주세요.</div>
+
+<div class="toolbar">
+  <input type="search" id="q" placeholder="샵 이름·주소·메모 검색">
+  <select id="sortSel">
+    <option value="freq">자주 가는 순</option>
+    <option value="recent">최근 방문 순</option>
+    <option value="name">이름순</option>
+    <option value="added">추가한 순</option>
+  </select>
+</div>
+<div class="tabs" id="catTabs"></div>
+<div class="count" id="count"></div>
+<div class="grid" id="grid"></div>
+
+<button class="fab" id="addBtn" title="샵 추가">＋</button>
+
+<!-- add/edit modal -->
+<div class="modal" id="modal"><div class="modal-box">
+  <h2 id="modalTitle">샵 추가</h2>
+  <div class="field"><label>샵 이름</label><input type="text" id="fName" maxlength="40" placeholder="예: 우제토 빈티지"></div>
+  <div class="field"><label>주소 (URL)</label><input type="text" id="fUrl" placeholder="예: uzeto.com 또는 https://..."></div>
+  <div class="field"><label>분류 (선택)</label><input type="text" id="fCat" maxlength="16" placeholder="예: 국내, 해외, 워크웨어"></div>
+  <div class="field"><label>메모 (선택)</label><textarea id="fMemo" maxlength="80" placeholder="예: 리바이스 빅사이즈 많음"></textarea></div>
+  <div class="modal-actions">
+    <button class="btn ghost left" id="delFromModal" style="display:none;color:var(--bad)">삭제</button>
+    <button class="btn ghost" id="cancelBtn">취소</button>
+    <button class="btn" id="saveBtn">저장</button>
+  </div>
+</div></div>
+
+<!-- data modal -->
+<div class="modal" id="dataModal"><div class="modal-box">
+  <h2>데이터 백업</h2>
+  <p class="small muted">등록한 샵 목록·방문기록을 JSON으로 저장/복원해요. 브라우저 저장소에만 있으니 가끔 백업해두면 안전해요.</p>
+  <div class="datarow">
+    <button class="btn ghost" id="expBtn">내보내기</button>
+    <button class="btn ghost" id="impBtn">가져오기</button>
+    <input type="file" id="impFile" accept="application/json" style="display:none">
+  </div>
+  <div class="modal-actions"><button class="btn" id="dataClose">닫기</button></div>
+</div></div>
+
+<script>
+/* ============================ 저장 ============================ */
+let storageOK=true;
+const LS=(function(){try{return window.localStorage}catch(e){return null}})();
+function safeGet(k){try{return LS?LS.getItem(k):null}catch(e){return null}}
+function safeSet(k,v){try{if(LS){LS.setItem(k,v);return true}}catch(e){storageOK=false}return false}
+(function(){if(!LS){storageOK=false}else{try{LS.setItem('__t','1');LS.removeItem('__t')}catch(e){storageOK=false}}
+  if(!storageOK)document.getElementById('storageWarn').style.display='block';})();
+
+const SKEY='vintage_shops_v1',TKEY='vintage_settings_v1';
+let shops=(function(){try{const r=JSON.parse(safeGet(SKEY));return Array.isArray(r)?r:[]}catch(e){return[]}})();
+let settings=(function(){try{return JSON.parse(safeGet(TKEY))||{}}catch(e){return{}}})();
+function saveShops(){safeSet(SKEY,JSON.stringify(shops))}
+function saveSettings(){safeSet(TKEY,JSON.stringify(settings))}
+
+/* ============================ 기본 샵 목록 (첫 실행 시 자동 등록) ============================ */
+const SEED=[
+/* 서울 · 프레피/유러피안 클래식 빈티지 */
+{name:'페이즐리캣',url:'https://paisleycat.shop',cat:'서울',memo:'프레피·유러피안 클래식'},
+{name:'수박빈티지',url:'https://soobaakvintage.com',cat:'서울',memo:'프레피·유러피안 클래식'},
+{name:'주코빈티지',url:'https://smartstore.naver.com/zukovintage',cat:'서울',memo:'프레피·유러피안 · 스마트스토어'},
+{name:'발발빈티지',url:'https://smartstore.naver.com/balbalvintage',cat:'서울',memo:'프레피·유러피안 · 스마트스토어'},
+/* 대구 로컬 · 아메카지/디자이너/스트릿 등 장르 혼재 */
+{name:'어거스트샵',url:'https://august-shop.kr',cat:'대구',memo:''},
+{name:'리리썬',url:'https://lilisun.kr',cat:'대구',memo:''},
+{name:'팔레트',url:'https://shop-palette.kr',cat:'대구',memo:''},
+{name:'오버핑거스',url:'https://overfingers.com',cat:'대구',memo:''},
+{name:'셋오프',url:'https://setoff.kr',cat:'대구',memo:''},
+{name:'LBB유나이티드',url:'https://lbbunited.com',cat:'대구',memo:''},
+{name:'불독하우스',url:'https://fruitsfamily.com/seller/490/bulldoghouse',cat:'대구',memo:'후루츠패밀리 입점 (자체 홈 없음)'},
+/* 전국구 · 대형 빈티지 편집샵 */
+{name:'배톤스',url:'https://batons.co.kr',cat:'전국구',memo:'대형 빈티지 편집샵'},
+{name:'빈티지플러스',url:'https://vintageplus.co.kr',cat:'전국구',memo:'대형 빈티지 편집샵'},
+/* 신발 전문 */
+{name:'커스텀무드',url:'https://custommood.co.kr',cat:'신발',memo:'신발 전문'},
+{name:'밀리브라운',url:'https://millibrown.co.kr',cat:'신발',memo:'신발 전문'},
+];
+if(!shops.length&&!settings.seeded){
+  shops=SEED.map((s,i)=>({id:'seed-'+(i+1),name:s.name,url:s.url,host:hostOf(s.url),
+    cat:s.cat,memo:s.memo,pin:false,visits:0,last:0,created:i}));
+  settings.seeded=true;saveShops();saveSettings();
+}
+/* 일회성 정리: 접속 불가로 확인된 기본 샵 제거 (이미 시드된 경우 대비, 사용자가 다시 추가하면 유지) */
+if(!settings.cleanBroken1){
+  const broken=['https://vagabond-vintage.com','https://kuromame1.cafe24.com'];
+  const before=shops.length;
+  shops=shops.filter(s=>!broken.includes(s.url));
+  if(shops.length!==before)saveShops();
+  settings.cleanBroken1=true;saveSettings();
+}
+
+/* ============================ 유틸 ============================ */
+function normUrl(u){u=(u||'').trim();if(!u)return'';if(!/^https?:\/\//i.test(u))u='https://'+u;return u}
+function hostOf(u){try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return''}}
+function hue(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
+function initial(name){const c=(name||'?').trim()[0]||'?';return c.toUpperCase()}
+function relTime(t){if(!t)return'';const d=Date.now()-t;const m=Math.floor(d/60000);
+  if(m<1)return'방금';if(m<60)return m+'분 전';const h=Math.floor(m/60);if(h<24)return h+'시간 전';
+  const dy=Math.floor(h/24);if(dy<30)return dy+'일 전';const mo=Math.floor(dy/30);
+  if(mo<12)return mo+'개월 전';return Math.floor(mo/12)+'년 전'}
+function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ============================ 상태 + 필터/정렬 ============================ */
+let activeCat='',query='',sortMode=settings.sort||'freq';
+document.getElementById('sortSel').value=sortMode;
+
+function cats(){return[...new Set(shops.map(s=>(s.cat||'').trim()).filter(Boolean))]}
+function filtered(){
+  let list=shops.filter(s=>{
+    if(activeCat&&(s.cat||'').trim()!==activeCat)return false;
+    if(query){const q=query.toLowerCase();
+      if(!((s.name+' '+s.host+' '+(s.memo||'')+' '+(s.cat||'')).toLowerCase().includes(q)))return false}
+    return true;
+  });
+  const cmp={
+    freq:(a,b)=>(b.visits||0)-(a.visits||0)||(b.last||0)-(a.last||0),
+    recent:(a,b)=>(b.last||0)-(a.last||0)||(b.visits||0)-(a.visits||0),
+    name:(a,b)=>a.name.localeCompare(b.name,'ko'),
+    added:(a,b)=>(a.created||0)-(b.created||0),
+  }[sortMode];
+  list.sort((a,b)=>((b.pin?1:0)-(a.pin?1:0))||cmp(a,b));
+  return list;
+}
+
+/* ============================ 렌더 ============================ */
+function renderTabs(){
+  const t=document.getElementById('catTabs');const cs=cats();
+  if(!cs.length){t.innerHTML='';t.style.display='none';return}
+  t.style.display='flex';
+  const tabs=[['','전체']].concat(cs.map(c=>[c,c]));
+  t.innerHTML=tabs.map(([k,n])=>`<button data-cat="${esc(k)}" class="${activeCat===k?'active':''}">${esc(n)}</button>`).join('');
+  t.querySelectorAll('button').forEach(b=>b.onclick=()=>{activeCat=b.dataset.cat;render()});
+}
+function shopCard(s){
+  const h=hue(s.name);
+  return `<div class="card ${s.pin?'pinned':''}" data-id="${s.id}">
+    <div class="open" data-open="${s.id}">
+      <div class="tile" style="background:hsl(${h} 52% 42%)">${esc(initial(s.name))}</div>
+      <div class="info">
+        <div class="name">${esc(s.name)}</div>
+        <div class="host">${esc(s.host||'주소 없음')}</div>
+        ${s.memo?`<div class="memo">${esc(s.memo)}</div>`:''}
+      </div>
+    </div>
+    <div class="foot">
+      <span class="pin ${s.pin?'on':''}" data-pin="${s.id}" title="핀 고정">${s.pin?'★':'☆'}</span>
+      ${s.cat?`<span class="cat">${esc(s.cat)}</span>`:''}
+      <span class="stat">${s.visits?s.visits+'번':'새 샵'}${s.last?' · '+relTime(s.last):''}</span>
+      <span class="spacer"></span>
+      <button class="mini" data-edit="${s.id}" title="수정">✏️</button>
+    </div>
+  </div>`;
+}
+function render(){
+  renderTabs();
+  const list=filtered();
+  document.getElementById('count').textContent=shops.length?`${list.length}개 샵${activeCat?' · '+activeCat:''}`:'';
+  const g=document.getElementById('grid');
+  if(!shops.length){
+    g.innerHTML=`<div class="empty"><span class="big">🧥</span>
+      아직 등록한 <b>빈티지샵</b>이 없어요.<br>오른쪽 아래 <b>＋</b> 로 좋아하는 샵을 추가하면<br>여기서 <b>클릭 한 번에 바로</b> 갈 수 있어요.</div>`;
+    return;
+  }
+  if(!list.length){g.innerHTML=`<div class="empty">조건에 맞는 샵이 없어요.</div>`;return}
+  g.innerHTML=list.map(shopCard).join('');
+  g.querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>openShop(el.dataset.open));
+  g.querySelectorAll('[data-pin]').forEach(el=>el.onclick=e=>{e.stopPropagation();togglePin(el.dataset.pin)});
+  g.querySelectorAll('[data-edit]').forEach(el=>el.onclick=e=>{e.stopPropagation();openModal(el.dataset.edit)});
+}
+
+/* ============================ 동작 ============================ */
+function openShop(id){
+  const s=shops.find(x=>x.id===id);if(!s)return;
+  if(!s.url){openModal(id);return}
+  s.visits=(s.visits||0)+1;s.last=Date.now();saveShops();
+  window.open(s.url,'_blank','noopener');
+  render();
+}
+function togglePin(id){const s=shops.find(x=>x.id===id);if(!s)return;s.pin=!s.pin;saveShops();render()}
+function openAllPins(){
+  const pins=shops.filter(s=>s.pin&&s.url);
+  if(!pins.length){alert('핀(★) 고정한 샵이 없어요. 카드의 별을 눌러 고정해보세요.');return}
+  if(pins.length>1&&!confirm(`핀 고정한 ${pins.length}개 샵을 새 탭으로 모두 열까요?\n(팝업 차단이 뜨면 허용해주세요)`))return;
+  pins.forEach(s=>{s.visits=(s.visits||0)+1;s.last=Date.now();window.open(s.url,'_blank','noopener')});
+  saveShops();render();
+}
+
+/* ============================ 추가/수정/삭제 ============================ */
+let editingId=null;
+function openModal(id){
+  editingId=id||null;
+  const s=id?shops.find(x=>x.id===id):null;
+  document.getElementById('modalTitle').textContent=s?'샵 수정':'샵 추가';
+  document.getElementById('fName').value=s?s.name:'';
+  document.getElementById('fUrl').value=s?(s.url||''):'';
+  document.getElementById('fCat').value=s?(s.cat||''):'';
+  document.getElementById('fMemo').value=s?(s.memo||''):'';
+  document.getElementById('delFromModal').style.display=s?'inline-block':'none';
+  document.getElementById('modal').classList.add('show');
+  setTimeout(()=>document.getElementById('fName').focus(),50);
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');editingId=null}
+function saveShop(){
+  const name=document.getElementById('fName').value.trim();
+  if(!name){alert('샵 이름을 입력하세요');return}
+  const url=normUrl(document.getElementById('fUrl').value);
+  const host=hostOf(url);
+  const cat=document.getElementById('fCat').value.trim();
+  const memo=document.getElementById('fMemo').value.trim();
+  if(editingId){
+    const s=shops.find(x=>x.id===editingId);
+    if(s){Object.assign(s,{name,url,host,cat,memo})}
+  }else{
+    shops.push({id:'s-'+Date.now(),name,url,host,cat,memo,pin:false,visits:0,last:0,created:Date.now()});
+  }
+  saveShops();closeModal();render();
+}
+function delShop(){
+  if(!editingId)return;
+  const s=shops.find(x=>x.id===editingId);
+  if(!confirm(`'${s?s.name:''}' 샵을 삭제할까요?`))return;
+  shops=shops.filter(x=>x.id!==editingId);saveShops();closeModal();render();
+}
+
+/* ============================ 백업 ============================ */
+function exportData(){
+  const data={shops,settings,exported:new Date().toISOString().slice(0,10)};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='빈티지샵-백업.json';a.click();URL.revokeObjectURL(a.href);
+}
+function importData(e){
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    if(Array.isArray(d.shops))shops=d.shops;if(d.settings)settings=d.settings;
+    saveShops();saveSettings();applyTheme();sortMode=settings.sort||sortMode;
+    document.getElementById('sortSel').value=sortMode;render();alert('가져오기 완료')}
+    catch(_){alert('파일을 읽을 수 없어요')}};r.readAsText(f);
+}
+
+/* ============================ 테마 + 이벤트 ============================ */
+function applyTheme(){document.documentElement.setAttribute('data-theme',settings.theme||'light');
+  document.getElementById('themeBtn').textContent=settings.theme==='dark'?'☀️':'🌙'}
+document.getElementById('themeBtn').onclick=()=>{settings.theme=settings.theme==='dark'?'light':'dark';saveSettings();applyTheme()};
+document.getElementById('q').oninput=e=>{query=e.target.value;render()};
+document.getElementById('sortSel').onchange=e=>{sortMode=e.target.value;settings.sort=sortMode;saveSettings();render()};
+document.getElementById('addBtn').onclick=()=>openModal();
+document.getElementById('cancelBtn').onclick=closeModal;
+document.getElementById('saveBtn').onclick=saveShop;
+document.getElementById('delFromModal').onclick=delShop;
+document.getElementById('openPins').onclick=openAllPins;
+document.getElementById('dataBtn').onclick=()=>document.getElementById('dataModal').classList.add('show');
+document.getElementById('dataClose').onclick=()=>document.getElementById('dataModal').classList.remove('show');
+document.getElementById('expBtn').onclick=exportData;
+document.getElementById('impBtn').onclick=()=>document.getElementById('impFile').click();
+document.getElementById('impFile').onchange=importData;
+document.getElementById('fUrl').addEventListener('keydown',e=>{if(e.key==='Enter')saveShop()});
+document.getElementById('fName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('fUrl').focus()});
+[document.getElementById('modal'),document.getElementById('dataModal')].forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove('show')});
+
+applyTheme();render();
+</script>
+</body>
+</html>
