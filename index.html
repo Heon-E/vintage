@@ -201,6 +201,7 @@ const SEED=[
 /* 서울 · 프레피/유러피안 클래식 빈티지 */
 {name:'페이즐리캣',url:'https://paisleycat.shop',cat:'서울',memo:'프레피·유러피안 클래식'},
 {name:'수박빈티지',url:'https://soobaakvintage.com',cat:'서울',memo:'프레피·유러피안 클래식'},
+{name:'배가본드',url:'https://vagabond-vintage.com',cat:'서울',memo:'⚠️SSL 만료(경고 후 접속) · 프레피·유러피안'},
 {name:'주코빈티지',url:'https://smartstore.naver.com/zukovintage',cat:'서울',memo:'프레피·유러피안 · 스마트스토어'},
 {name:'발발빈티지',url:'https://smartstore.naver.com/balbalvintage',cat:'서울',memo:'프레피·유러피안 · 스마트스토어'},
 /* 대구 로컬 · 아메카지/디자이너/스트릿 등 장르 혼재 */
@@ -225,11 +226,20 @@ if(!shops.length&&!settings.seeded){
 }
 /* 일회성 정리: 접속 불가로 확인된 기본 샵 제거 (이미 시드된 경우 대비, 사용자가 다시 추가하면 유지) */
 if(!settings.cleanBroken1){
-  const broken=['https://vagabond-vintage.com','https://kuromame1.cafe24.com'];
+  const broken=['https://kuromame1.cafe24.com'];
   const before=shops.length;
   shops=shops.filter(s=>!broken.includes(s.url));
   if(shops.length!==before)saveShops();
   settings.cleanBroken1=true;saveSettings();
+}
+/* 일회성: 배가본드 재추가 (자헌 요청 2026-07-13, 이미 15곳으로 배포된 기존 저장분에도 반영) */
+if(!settings.readdVagabond){
+  if(!shops.some(s=>s.host==='vagabond-vintage.com')){
+    shops.push({id:'s-vagabond',name:'배가본드',url:'https://vagabond-vintage.com',host:'vagabond-vintage.com',
+      cat:'서울',memo:'⚠️SSL 만료(경고 후 접속) · 프레피·유러피안',pin:false,visits:0,last:0,created:Date.now()});
+    saveShops();
+  }
+  settings.readdVagabond=true;saveSettings();
 }
 
 /* ============================ 유틸 ============================ */
