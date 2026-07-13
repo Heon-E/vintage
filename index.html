@@ -67,6 +67,22 @@ header h1{font-size:1.35rem}
 .mini{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:2px 3px;line-height:1}
 .mini:hover{color:var(--accent)} .mini.del:hover{color:var(--bad)}
 
+/* 남성 신상 배지 */
+.card.hasnew{border-color:var(--good);box-shadow:0 0 0 2px rgba(91,140,90,.28),var(--shadow)}
+.newrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.newbadge{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:700;font-family:inherit;
+  background:var(--good);color:#fff;padding:4px 10px;border-radius:999px;cursor:pointer;border:none}
+.newbadge:hover{filter:brightness(1.07)}
+.checkline{font-size:.72rem;color:var(--muted)}
+/* 연동 모달 */
+.step{font-size:.82rem;font-weight:700;color:var(--text);margin:15px 0 5px}
+.mono{width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.75rem;line-height:1.45;
+  min-height:108px;padding:10px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg);
+  color:var(--text);resize:vertical}
+.howto{font-size:.82rem;color:var(--muted);line-height:1.55} .howto b{color:var(--text)}
+.syncmsg{font-size:.82rem;margin-top:8px;min-height:1.2em}
+.syncmsg.ok{color:var(--good)} .syncmsg.err{color:var(--bad)}
+
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:48px 20px;border:1.5px dashed var(--border);
   border-radius:var(--radius);background:var(--surface)}
 .empty b{color:var(--text)} .empty .big{font-size:2.2rem;display:block;margin-bottom:10px}
@@ -98,6 +114,7 @@ header h1{font-size:1.35rem}
 <header>
   <h1>🧥 빈티지샵</h1>
   <div style="display:flex;gap:6px">
+    <button class="iconbtn" id="syncBtn" title="남성 신상 체크 (어사이드 연동)">🆕</button>
     <button class="iconbtn" id="openPins" title="핀 고정 샵 모두 열기">📌</button>
     <button class="iconbtn" id="dataBtn" title="백업">💾</button>
     <button class="iconbtn" id="themeBtn" title="테마">🌙</button>
@@ -144,6 +161,24 @@ header h1{font-size:1.35rem}
     <input type="file" id="impFile" accept="application/json" style="display:none">
   </div>
   <div class="modal-actions"><button class="btn" id="dataClose">닫기</button></div>
+</div></div>
+
+<!-- 어사이드 연동: 남성 신상 체크 -->
+<div class="modal" id="syncModal"><div class="modal-box">
+  <h2>🆕 남성 신상 체크 <span class="small muted">· 어사이드 연동</span></h2>
+  <p class="howto">별표(<b>★</b>)한 샵을 <b>어사이드</b>가 대신 훑어 남성 신상을 가져오면, 앱이 지난번과 비교해 <b>새로 들어온 것만</b> 카드에 <b>🆕</b>로 표시해요.</p>
+  <div id="syncNoStar" class="howto" style="display:none;margin-top:12px">⚠️ 별표(★)한 샵이 없어요. 카드의 별을 눌러 체크할 샵을 먼저 골라주세요.</div>
+  <div id="syncBody">
+    <div class="checkline" id="syncMeta" style="margin-top:8px"></div>
+    <div class="step">① 이 지시문을 복사해 어사이드에 붙여넣기</div>
+    <textarea class="mono" id="syncPrompt" readonly></textarea>
+    <button class="btn ghost" id="copyPrompt" style="margin-top:6px">📋 지시문 복사</button>
+    <div class="step">② 어사이드가 준 결과(JSON)를 붙여넣고 반영</div>
+    <textarea class="mono" id="syncResult" placeholder='어사이드 결과를 여기 붙여넣기 … 예: {"shops":[{"name":"어거스트샵","menUrl":"...","items":[{"name":"..","url":".."}]}]}'></textarea>
+    <div class="modal-actions" style="margin-top:8px"><button class="btn" id="applyResult">반영하기</button></div>
+    <div class="syncmsg" id="syncMsg"></div>
+  </div>
+  <div class="modal-actions"><button class="btn ghost" id="syncClose">닫기</button></div>
 </div></div>
 
 <script>
@@ -241,7 +276,11 @@ function renderTabs(){
 }
 function shopCard(s){
   const h=hue(s.name);
-  return `<div class="card ${s.pin?'pinned':''}" data-id="${s.id}">
+  const nnew=(s.pin&&Array.isArray(s.newItems))?s.newItems.length:0;
+  let newrow='';
+  if(nnew>0)newrow=`<div class="newrow"><button class="newbadge" data-new="${s.id}" title="남성 신상 보러가기">🆕 남성 신상 ${nnew}</button></div>`;
+  else if(s.pin&&s.checkedAt)newrow=`<div class="newrow"><span class="checkline">남성 신상 없음 · ${relTime(s.checkedAt)}</span></div>`;
+  return `<div class="card ${s.pin?'pinned':''} ${nnew>0?'hasnew':''}" data-id="${s.id}">
     <div class="open" data-open="${s.id}">
       <div class="tile" style="background:hsl(${h} 52% 42%)">${esc(initial(s.name))}</div>
       <div class="info">
@@ -250,6 +289,7 @@ function shopCard(s){
         ${s.memo?`<div class="memo">${esc(s.memo)}</div>`:''}
       </div>
     </div>
+    ${newrow}
     <div class="foot">
       <span class="pin ${s.pin?'on':''}" data-pin="${s.id}" title="핀 고정">${s.pin?'★':'☆'}</span>
       ${s.cat?`<span class="cat">${esc(s.cat)}</span>`:''}
@@ -274,6 +314,7 @@ function render(){
   g.querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>openShop(el.dataset.open));
   g.querySelectorAll('[data-pin]').forEach(el=>el.onclick=e=>{e.stopPropagation();togglePin(el.dataset.pin)});
   g.querySelectorAll('[data-edit]').forEach(el=>el.onclick=e=>{e.stopPropagation();openModal(el.dataset.edit)});
+  g.querySelectorAll('[data-new]').forEach(el=>el.onclick=e=>{e.stopPropagation();acknowledgeNew(el.dataset.new)});
 }
 
 /* ============================ 동작 ============================ */
@@ -291,6 +332,83 @@ function openAllPins(){
   if(pins.length>1&&!confirm(`핀 고정한 ${pins.length}개 샵을 새 탭으로 모두 열까요?\n(팝업 차단이 뜨면 허용해주세요)`))return;
   pins.forEach(s=>{s.visits=(s.visits||0)+1;s.last=Date.now();window.open(s.url,'_blank','noopener')});
   saveShops();render();
+}
+
+/* ============================ 남성 신상 체크 (어사이드 연동) ============================ */
+function starred(){return shops.filter(s=>s.pin)}
+function normName(x){return(x||'').toLowerCase().replace(/\s+/g,'')}
+function buildPrompt(){
+  const lines=starred().map(s=>`- ${s.name}: ${s.url||('https://'+s.host)}`).join('\n');
+  return [
+'아래 빈티지샵들을 각각 열어서, "남성(men) 신상 / NEW" 섹션에 지금 올라와 있는 남성 상품을 최신순으로 최대 20개까지 수집해줘.',
+'여성·공용 상품은 빼고 남성 상품만. 각 샵의 남성 신상 페이지 URL(menUrl)도 함께 알려줘.',
+'설명 없이 아래 JSON 형식으로만 답해줘(상품 url은 전체 절대경로 링크):',
+'{"shops":[{"name":"<아래 목록의 샵 이름 그대로>","menUrl":"<남성 신상 페이지 URL>","items":[{"name":"<상품명>","url":"<상품 링크>"}]}]}',
+'접속이 안 되거나 남성 섹션이 없으면 그 샵은 "items":[] 로 두고 "note"에 이유를 적어줘.',
+'',
+'샵 목록:',
+lines
+  ].join('\n');
+}
+function extractJson(text){
+  if(!text)return null;let t=text.trim();
+  const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i);if(fence)t=fence[1].trim();
+  const i=t.indexOf('{'),j=t.lastIndexOf('}');if(i>=0&&j>i)t=t.slice(i,j+1);
+  try{return JSON.parse(t)}catch(e){return null}
+}
+function applyAsideResult(){
+  const msg=document.getElementById('syncMsg');
+  const data=extractJson(document.getElementById('syncResult').value);
+  if(!data){msg.className='syncmsg err';msg.textContent='JSON을 못 읽었어요. 어사이드 결과를 통째로 붙여넣어 주세요.';return}
+  const arr=Array.isArray(data)?data:(Array.isArray(data.shops)?data.shops:null);
+  if(!arr){msg.className='syncmsg err';msg.textContent='형식이 달라요. {"shops":[...]} 형태여야 해요.';return}
+  const now=Date.now();let matched=0,totalNew=0;const unmatched=[];
+  arr.forEach(r=>{
+    const rn=normName(r.name);
+    let s=shops.find(x=>x.pin&&normName(x.name)===rn)||shops.find(x=>normName(x.name)===rn);
+    if(!s){if(r.name)unmatched.push(r.name);return}
+    matched++;
+    const items=Array.isArray(r.items)?r.items.filter(it=>it&&it.url):[];
+    const seen=new Set(s.seen||[]);
+    const fresh=items.filter(it=>!seen.has(it.url));
+    items.forEach(it=>seen.add(it.url));
+    s.seen=[...seen].slice(-400);
+    const map={};[...(Array.isArray(s.newItems)?s.newItems:[]),...fresh].forEach(it=>{if(it&&it.url)map[it.url]={name:it.name||'',url:it.url}});
+    s.newItems=Object.values(map);
+    if(r.menUrl)s.menUrl=r.menUrl;
+    s.checkedAt=now;totalNew+=fresh.length;
+  });
+  saveShops();render();
+  let m=`반영 완료 · ${matched}개 샵 확인, 새 남성 신상 ${totalNew}개`;
+  if(unmatched.length)m+=` · 매칭 실패: ${unmatched.join(', ')}`;
+  msg.className='syncmsg ok';msg.textContent=m;
+  document.getElementById('syncResult').value='';
+}
+function openSync(){
+  const list=starred();
+  const noStar=document.getElementById('syncNoStar'),body=document.getElementById('syncBody');
+  if(!list.length){noStar.style.display='block';body.style.display='none';}
+  else{
+    noStar.style.display='none';body.style.display='block';
+    document.getElementById('syncPrompt').value=buildPrompt();
+    const times=list.map(s=>s.checkedAt).filter(Boolean);const last=times.length?Math.max(...times):0;
+    document.getElementById('syncMeta').textContent=`대상: 별표 ${list.length}개 샵`+(last?` · 마지막 확인 ${relTime(last)}`:' · 아직 확인 전');
+    const msg=document.getElementById('syncMsg');msg.textContent='';msg.className='syncmsg';
+  }
+  document.getElementById('syncModal').classList.add('show');
+}
+function acknowledgeNew(id){
+  const s=shops.find(x=>x.id===id);if(!s)return;
+  const url=s.menUrl||s.url;
+  s.newItems=[];saveShops();
+  if(url)window.open(url,'_blank','noopener');
+  render();
+}
+function copyPromptText(){
+  const t=document.getElementById('syncPrompt');t.focus();t.select();
+  const done=()=>{const b=document.getElementById('copyPrompt');const o=b.textContent;b.textContent='✓ 복사됨';setTimeout(()=>b.textContent=o,1200)};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(done).catch(()=>{try{document.execCommand('copy');done()}catch(e){}})}
+  else{try{document.execCommand('copy');done()}catch(e){}}
 }
 
 /* ============================ 추가/수정/삭제 ============================ */
@@ -356,6 +474,10 @@ document.getElementById('cancelBtn').onclick=closeModal;
 document.getElementById('saveBtn').onclick=saveShop;
 document.getElementById('delFromModal').onclick=delShop;
 document.getElementById('openPins').onclick=openAllPins;
+document.getElementById('syncBtn').onclick=openSync;
+document.getElementById('syncClose').onclick=()=>document.getElementById('syncModal').classList.remove('show');
+document.getElementById('copyPrompt').onclick=copyPromptText;
+document.getElementById('applyResult').onclick=applyAsideResult;
 document.getElementById('dataBtn').onclick=()=>document.getElementById('dataModal').classList.add('show');
 document.getElementById('dataClose').onclick=()=>document.getElementById('dataModal').classList.remove('show');
 document.getElementById('expBtn').onclick=exportData;
@@ -363,7 +485,7 @@ document.getElementById('impBtn').onclick=()=>document.getElementById('impFile')
 document.getElementById('impFile').onchange=importData;
 document.getElementById('fUrl').addEventListener('keydown',e=>{if(e.key==='Enter')saveShop()});
 document.getElementById('fName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('fUrl').focus()});
-[document.getElementById('modal'),document.getElementById('dataModal')].forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove('show')});
+[document.getElementById('modal'),document.getElementById('dataModal'),document.getElementById('syncModal')].forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove('show')});
 
 applyTheme();render();
 </script>
