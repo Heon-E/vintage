@@ -212,6 +212,7 @@ const SEED=[
 {name:'셋오프',url:'https://setoff.kr',cat:'대구',memo:''},
 {name:'LBB유나이티드',url:'https://lbbunited.com',cat:'대구',memo:''},
 {name:'불독하우스',url:'https://fruitsfamily.com/seller/490/bulldoghouse',cat:'대구',memo:'후루츠패밀리 입점 (자체 홈 없음)'},
+{name:'이코샵',url:'https://ikkoshop.kr',cat:'대구',memo:'디자이너 빈티지 (헬무트랑·마르니·요지)'},
 /* 전국구 · 대형 빈티지 편집샵 */
 {name:'배톤스',url:'https://batons.co.kr',cat:'전국구',memo:'대형 빈티지 편집샵'},
 {name:'빈티지플러스',url:'https://vintageplus.co.kr',cat:'전국구',memo:'대형 빈티지 편집샵'},
@@ -240,6 +241,15 @@ if(!settings.readdVagabond){
     saveShops();
   }
   settings.readdVagabond=true;saveSettings();
+}
+/* 일회성: 이코샵 추가 (자헌 요청 2026-07-14, 기존 저장분에도 반영) */
+if(!settings.addIkko){
+  if(!shops.some(s=>s.host==='ikkoshop.kr')){
+    shops.push({id:'s-ikko',name:'이코샵',url:'https://ikkoshop.kr',host:'ikkoshop.kr',
+      cat:'대구',memo:'디자이너 빈티지 (헬무트랑·마르니·요지)',pin:false,visits:0,last:0,created:Date.now()});
+    saveShops();
+  }
+  settings.addIkko=true;saveSettings();
 }
 
 /* ============================ 유틸 ============================ */
