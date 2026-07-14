@@ -206,6 +206,7 @@ const SEED=[
 {name:'발발빈티지',url:'https://smartstore.naver.com/balbalvintage',cat:'서울',memo:'프레피·유러피안 · 스마트스토어'},
 {name:'테라스웨어',url:'https://smartstore.naver.com/terracewear',cat:'서울',memo:'아메리칸 빈티지 · 망원동 (스마트스토어)'},
 {name:'세컨드 스퀘어',url:'https://blog.naver.com/2ndsquare',cat:'서울',memo:'남성 클래식 수입 세컨핸즈 · 마포 (블로그)'},
+{name:'카페더비',url:'https://instagram.com/derby_shoes',cat:'서울',memo:'클래식 · 위탁 슈즈 (인스타 운영)'},
 /* 대구 로컬 · 아메카지/디자이너/스트릿 등 장르 혼재 */
 {name:'어거스트샵',url:'https://august-shop.kr',cat:'대구',memo:''},
 {name:'리리썬',url:'https://lilisun.kr',cat:'대구',memo:''},
@@ -221,7 +222,6 @@ const SEED=[
 /* 신발 전문 */
 {name:'커스텀무드',url:'https://custommood.co.kr',cat:'신발',memo:'신발 전문'},
 {name:'밀리브라운',url:'https://millibrown.co.kr',cat:'신발',memo:'신발 전문'},
-{name:'카페더비',url:'https://instagram.com/derby_shoes',cat:'신발',memo:'빈티지·위탁 슈즈 (인스타 운영)'},
 ];
 if(!shops.length&&!settings.seeded){
   shops=SEED.map((s,i)=>({id:'seed-'+(i+1),name:s.name,url:s.url,host:hostOf(s.url),
@@ -245,8 +245,15 @@ function ensureShop(flag,def,match){
 ensureShop('readdVagabond',{name:'배가본드',url:'https://vagabond-vintage.com',host:'vagabond-vintage.com',cat:'서울',memo:'⚠️SSL 만료(경고 후 접속) · 프레피·유러피안'},s=>s.host==='vagabond-vintage.com');
 ensureShop('addIkko',{name:'이코샵',url:'https://ikkoshop.kr',host:'ikkoshop.kr',cat:'대구',memo:'디자이너 빈티지 (헬무트랑·마르니·요지)'},s=>s.host==='ikkoshop.kr');
 ensureShop('addTerrace',{name:'테라스웨어',url:'https://smartstore.naver.com/terracewear',host:'smartstore.naver.com',cat:'서울',memo:'아메리칸 빈티지 · 망원동 (스마트스토어)'},s=>(s.url||'').includes('terracewear'));
-ensureShop('addDerby',{name:'카페더비',url:'https://instagram.com/derby_shoes',host:'instagram.com',cat:'신발',memo:'빈티지·위탁 슈즈 (인스타 운영)'},s=>(s.url||'').includes('derby_shoes'));
+ensureShop('addDerby',{name:'카페더비',url:'https://instagram.com/derby_shoes',host:'instagram.com',cat:'서울',memo:'클래식 · 위탁 슈즈 (인스타 운영)'},s=>(s.url||'').includes('derby_shoes'));
 ensureShop('add2ndSquare',{name:'세컨드 스퀘어',url:'https://blog.naver.com/2ndsquare',host:'blog.naver.com',cat:'서울',memo:'남성 클래식 수입 세컨핸즈 · 마포 (블로그)'},s=>(s.url||'').includes('2ndsquare'));
+/* 일회성 샵 정보 수정 (기존 저장분에도 반영). 사용자가 이후 직접 바꾸면 다시 안 덮음 */
+function updateShop(flag,match,changes){
+  if(settings[flag])return;
+  const s=shops.find(match);if(s){Object.assign(s,changes);saveShops()}
+  settings[flag]=true;saveSettings();
+}
+updateShop('derbySeoul',s=>(s.url||'').includes('derby_shoes'),{cat:'서울',memo:'클래식 · 위탁 슈즈 (인스타 운영)'});
 
 /* ============================ 유틸 ============================ */
 function normUrl(u){u=(u||'').trim();if(!u)return'';if(!/^https?:\/\//i.test(u))u='https://'+u;return u}
